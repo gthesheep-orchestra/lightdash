@@ -6421,6 +6421,15 @@ describe('AsyncQueryService', () => {
             ).resolves.toBeUndefined();
         });
 
+        test('treats inherited object keys as unset, not as a server error', async () => {
+            await expect(
+                setup(true).resolveRequestUserAttributeOverrides(
+                    sessionAccount,
+                    JSON.parse('{"constructor":["x"]}'),
+                ),
+            ).resolves.toBeDefined();
+        });
+
         test('rejects non-admins', async () => {
             await expect(
                 setup(false).resolveRequestUserAttributeOverrides(

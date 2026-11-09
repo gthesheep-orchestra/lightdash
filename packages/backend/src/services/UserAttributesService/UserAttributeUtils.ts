@@ -25,14 +25,14 @@ export const userAttributeOverridesSchema = z
     });
 
 /**
- * Validates that header user attributes are allowed:
- * 1. User must be org admin/owner to use header overrides
+ * Validates that user attribute overrides are allowed:
+ * 1. User must be org admin/owner to use overrides
  * 2. Override values must be a subset of user's existing permissions (narrowing only)
  */
 export const validateUserAttributeOverrides = (
     user: SessionUser,
     auditedAbility: CaslAuditWrapper<Ability>,
-    headerAttributes: UserAttributeValueMap,
+    overrideAttributes: UserAttributeValueMap,
     dbAttributes: UserAttributeValueMap,
 ): void => {
     const { organizationUuid } = user;
@@ -40,7 +40,7 @@ export const validateUserAttributeOverrides = (
         throw new ForbiddenError('User is not part of an organization');
     }
 
-    // Check admin permission - only admins can override via header
+    // Check admin permission - only admins can use overrides
     if (
         auditedAbility.cannot(
             'manage',
@@ -52,10 +52,12 @@ export const validateUserAttributeOverrides = (
         );
     }
 
-    // Validate narrowing: header values must be subset of existing permissions
+    // Validate narrowing: override values must be subset of existing permissions
     // Exception: if user has no existing value for an attribute, admin can set it
-    for (const [key, overrideValues] of Object.entries(headerAttributes)) {
-        const existingValues = dbAttributes[key];
+    for (const [key, overrideValues] of Object.entries(overrideAttributes)) {
+        const existingValues = Object.hasOwn(dbAttributes, key)
+            ? dbAttributes[key]
+            : undefined;
 
         // If user has no existing values for this attribute, allow admin to set it
         if (!existingValues || existingValues.length === 0) {

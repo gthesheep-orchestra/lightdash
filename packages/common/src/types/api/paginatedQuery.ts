@@ -21,11 +21,6 @@ type CommonExecuteQueryRequestParams = {
     invalidateCache?: boolean;
     usePreAggregateCache?: boolean;
     parameters?: ParametersValuesMap;
-    /**
-     * Org admins only. Values replace the caller's stored attributes for this
-     * query and must narrow existing access (unset attributes can be set).
-     */
-    userAttributes?: UserAttributeValueMap;
 };
 
 export type DateZoom = {
@@ -35,6 +30,11 @@ export type DateZoom = {
 
 export type ExecuteAsyncMetricQueryRequestParams =
     CommonExecuteQueryRequestParams & {
+        /**
+         * Org admins only. Values replace the caller's stored attributes for this
+         * query and must narrow existing access (unset attributes can be set).
+         */
+        userAttributes?: UserAttributeValueMap;
         query: Omit<MetricQueryRequest, 'csvLimit'>;
         /**
          * Export row limit, same contract as the saved-chart endpoints:
@@ -69,6 +69,11 @@ export type ExecuteAsyncSavedChartRequestParams =
 
 export type ExecuteAsyncDashboardChartRequestParams =
     CommonExecuteQueryRequestParams & {
+        /**
+         * Org admins only. Values replace the caller's stored attributes for this
+         * query and must narrow existing access (unset attributes can be set).
+         */
+        userAttributes?: UserAttributeValueMap;
         chartUuid: string;
         tileUuid: string;
         dashboardUuid: string;

@@ -336,6 +336,55 @@ describe('QueryController', () => {
             }),
         );
     });
+
+    it('validates and forwards request user attributes to dashboard-chart execution', async () => {
+        const executeAsyncDashboardChartQuery = vi
+            .fn()
+            .mockResolvedValue({ queryUuid: 'query-uuid' });
+        const resolveRequestUserAttributeOverrides = vi
+            .fn()
+            .mockResolvedValue({ region: ['EU'] });
+        const controller = new QueryController({
+            getAsyncQueryService: () => ({
+                executeAsyncDashboardChartQuery,
+                resolveRequestUserAttributeOverrides,
+                redactFieldsSqlForResponse: passThroughResults,
+            }),
+        } as unknown as ConstructorParameters<typeof QueryController>[0]);
+        const account = {};
+        const req = {
+            account,
+            headers: {},
+            header: () => undefined,
+        } as unknown as express.Request;
+
+        await controller.executeAsyncDashboardChartQuery(
+            {
+                chartUuid: 'chart-uuid',
+                tileUuid: 'tile-uuid',
+                dashboardUuid: 'dashboard-uuid',
+                dashboardFilters: {
+                    dimensions: [],
+                    metrics: [],
+                    tableCalculations: [],
+                },
+                dashboardSorts: [],
+                userAttributes: { region: ['EU'] },
+            },
+            'project-uuid',
+            req,
+        );
+
+        expect(resolveRequestUserAttributeOverrides).toHaveBeenCalledWith(
+            account,
+            { region: ['EU'] },
+        );
+        expect(executeAsyncDashboardChartQuery).toHaveBeenCalledWith(
+            expect.objectContaining({
+                userAttributeOverrides: { region: ['EU'] },
+            }),
+        );
+    });
 });
 
 it.each([
