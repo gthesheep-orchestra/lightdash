@@ -48,6 +48,7 @@ describe('QueryController', () => {
             const controller = new QueryController({
                 getAsyncQueryService: () => ({
                     executeAsyncMetricQuery,
+                    resolveRequestUserAttributeOverrides: vi.fn(),
                     redactFieldsSqlForResponse: passThroughResults,
                 }),
             } as unknown as ConstructorParameters<typeof QueryController>[0]);
@@ -169,6 +170,7 @@ describe('QueryController', () => {
         const controller = new QueryController({
             getAsyncQueryService: () => ({
                 executeAsyncMetricQuery,
+                resolveRequestUserAttributeOverrides: vi.fn(),
                 redactFieldsSqlForResponse: passThroughResults,
             }),
         } as unknown as ConstructorParameters<typeof QueryController>[0]);
@@ -208,6 +210,7 @@ describe('QueryController', () => {
         const controller = new QueryController({
             getAsyncQueryService: () => ({
                 executeAsyncMetricQuery,
+                resolveRequestUserAttributeOverrides: vi.fn(),
                 redactFieldsSqlForResponse: passThroughResults,
             }),
         } as unknown as ConstructorParameters<typeof QueryController>[0]);
@@ -282,6 +285,55 @@ describe('QueryController', () => {
 
         expect(executeAsyncSavedChartQuery).toHaveBeenCalledWith(
             expect.objectContaining({ pivotConfiguration }),
+        );
+    });
+
+    it('validates and forwards request user attributes to metric-query execution', async () => {
+        const executeAsyncMetricQuery = vi
+            .fn()
+            .mockResolvedValue({ queryUuid: 'query-uuid' });
+        const resolveRequestUserAttributeOverrides = vi
+            .fn()
+            .mockResolvedValue({ region: ['EU'] });
+        const controller = new QueryController({
+            getAsyncQueryService: () => ({
+                executeAsyncMetricQuery,
+                resolveRequestUserAttributeOverrides,
+                redactFieldsSqlForResponse: passThroughResults,
+            }),
+        } as unknown as ConstructorParameters<typeof QueryController>[0]);
+        const account = {};
+        const req = {
+            account,
+            headers: {},
+            header: () => undefined,
+        } as unknown as express.Request;
+
+        await controller.executeAsyncMetricQuery(
+            {
+                query: {
+                    exploreName: 'orders',
+                    dimensions: [],
+                    metrics: ['orders_count'],
+                    filters: {},
+                    sorts: [],
+                    limit: 500,
+                    tableCalculations: [],
+                },
+                userAttributes: { region: ['EU'] },
+            },
+            'project-uuid',
+            req,
+        );
+
+        expect(resolveRequestUserAttributeOverrides).toHaveBeenCalledWith(
+            account,
+            { region: ['EU'] },
+        );
+        expect(executeAsyncMetricQuery).toHaveBeenCalledWith(
+            expect.objectContaining({
+                userAttributeOverrides: { region: ['EU'] },
+            }),
         );
     });
 });

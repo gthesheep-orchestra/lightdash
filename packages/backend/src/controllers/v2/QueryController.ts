@@ -395,6 +395,12 @@ export class QueryController extends BaseController {
             .executeAsyncMetricQuery({
                 account: req.account!,
                 projectUuid,
+                userAttributeOverrides: await this.services
+                    .getAsyncQueryService()
+                    .resolveRequestUserAttributeOverrides(
+                        req.account!,
+                        body.userAttributes,
+                    ),
                 invalidateCache: body.invalidateCache,
                 usePreAggregateCache: body.usePreAggregateCache,
                 metricQuery,
@@ -592,6 +598,12 @@ export class QueryController extends BaseController {
             .executeAsyncDashboardChartQuery({
                 account: req.account!,
                 projectUuid,
+                userAttributeOverrides: await this.services
+                    .getAsyncQueryService()
+                    .resolveRequestUserAttributeOverrides(
+                        req.account!,
+                        body.userAttributes,
+                    ),
                 invalidateCache: body.invalidateCache,
                 tileUuid: body.tileUuid,
                 chartUuid: body.chartUuid,

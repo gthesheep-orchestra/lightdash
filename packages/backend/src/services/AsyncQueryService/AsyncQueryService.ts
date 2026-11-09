@@ -227,7 +227,10 @@ import {
     DownloadCsv,
     type OnboardingFlow,
 } from '../../analytics/LightdashAnalytics';
-import { getEmbedActorChartSpaceUuids } from '../../auth/account';
+import {
+    getEmbedActorChartSpaceUuids,
+    toSessionUser,
+} from '../../auth/account';
 import { fromServiceAccount, fromSession } from '../../auth/account/account';
 import { destroyS3Body } from '../../clients/Aws/s3Streams';
 import { transformAndExportResults } from '../../clients/Aws/transformAndExportResults';
@@ -412,6 +415,7 @@ import {
 import {
     exploreHasFilteredAttribute,
     getFilteredExplore,
+    validateUserAttributeOverrides,
 } from '../UserAttributesService/UserAttributeUtils';
 import { trustedAgentQueryTags } from '../WarehouseClientFactory/agentQueryTags';
 import {
@@ -1361,6 +1365,28 @@ export class AsyncQueryService extends ProjectService {
                 ? this.preAggregateStrategy.getResultsStorageClient()
                 : undefined;
         return strategyClient ?? this.resultsStorageClient;
+    }
+
+    /** Validates request-supplied attribute overrides (admin-only, narrowing). */
+    async resolveRequestUserAttributeOverrides(
+        account: Account,
+        overrides: UserAttributeValueMap | undefined,
+    ): Promise<UserAttributeValueMap | undefined> {
+        if (!overrides || Object.keys(overrides).length === 0) {
+            return undefined;
+        }
+        assertRegisteredAccount(account);
+        const user = toSessionUser(account);
+        const { userAttributes: dbAttributes } = await this.getUserAttributes({
+            account,
+        });
+        validateUserAttributeOverrides(
+            user,
+            this.createAuditedAbility(account),
+            overrides,
+            dbAttributes,
+        );
+        return overrides;
     }
 
     private async getExploreForMetricQueryExecution({
@@ -9955,6 +9981,8 @@ export class AsyncQueryService extends ProjectService {
                 projectUuid,
                 savedChart.tableName,
                 organizationUuid,
+                true,
+                userAttributeOverrides,
             ),
         ]);
 

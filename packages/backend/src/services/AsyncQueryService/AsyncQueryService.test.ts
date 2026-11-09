@@ -6396,6 +6396,56 @@ describe('AsyncQueryService', () => {
         }
     });
 
+    describe('resolveRequestUserAttributeOverrides', () => {
+        const setup = (canManage: boolean) => {
+            const service = getMockedAsyncQueryService(lightdashConfigMock);
+            vi.spyOn(service, 'getUserAttributes').mockResolvedValue({
+                userAttributes: { region: ['US'] },
+                intrinsicUserAttributes: {},
+            });
+            vi.spyOn(
+                service as unknown as { createAuditedAbility: () => unknown },
+                'createAuditedAbility',
+            ).mockReturnValue({
+                cannot: () => !canManage,
+            });
+            return service;
+        };
+
+        test('returns undefined without overrides', async () => {
+            await expect(
+                setup(false).resolveRequestUserAttributeOverrides(
+                    sessionAccount,
+                    {},
+                ),
+            ).resolves.toBeUndefined();
+        });
+
+        test('rejects non-admins', async () => {
+            await expect(
+                setup(false).resolveRequestUserAttributeOverrides(
+                    sessionAccount,
+                    { team: ['a'] },
+                ),
+            ).rejects.toThrow('Only organization admins');
+        });
+
+        test('allows admins to narrow or set unset attributes, not broaden', async () => {
+            const service = setup(true);
+            await expect(
+                service.resolveRequestUserAttributeOverrides(sessionAccount, {
+                    region: ['US'],
+                    team: ['a'],
+                }),
+            ).resolves.toEqual({ region: ['US'], team: ['a'] });
+            await expect(
+                service.resolveRequestUserAttributeOverrides(sessionAccount, {
+                    region: ['EU'],
+                }),
+            ).rejects.toThrow('Cannot expand access');
+        });
+    });
+
     describe('executeAsyncMetricQuery', () => {
         const getServiceWithExportLimit = (csvCellsLimit: number | null) => {
             const service = getMockedAsyncQueryService(lightdashConfigMock, {

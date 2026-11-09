@@ -13,6 +13,7 @@ import type {
     QuerySourceTableName,
 } from '../querySources';
 import type { DateGranularity } from '../timeFrames';
+import type { UserAttributeValueMap } from '../userAttributes';
 import type { UUID } from './uuid';
 
 type CommonExecuteQueryRequestParams = {
@@ -20,6 +21,11 @@ type CommonExecuteQueryRequestParams = {
     invalidateCache?: boolean;
     usePreAggregateCache?: boolean;
     parameters?: ParametersValuesMap;
+    /**
+     * Org admins only. Values replace the caller's stored attributes for this
+     * query and must narrow existing access (unset attributes can be set).
+     */
+    userAttributes?: UserAttributeValueMap;
 };
 
 export type DateZoom = {
