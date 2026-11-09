@@ -71,7 +71,7 @@ export const validateUserAttributeOverrides = (
             );
             if (!isSubset) {
                 throw new ForbiddenError(
-                    `Cannot expand access via header: values for '${key}' must be a subset of your existing permissions [${existingValues.join(
+                    `Cannot expand access with attribute overrides: values for '${key}' must be a subset of your existing permissions [${existingValues.join(
                         ', ',
                     )}]`,
                 );
