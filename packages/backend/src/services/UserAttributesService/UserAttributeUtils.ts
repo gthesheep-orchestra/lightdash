@@ -4,6 +4,7 @@ import {
     CorruptedExploreError,
     Explore,
     ForbiddenError,
+    ParameterError,
     SessionUser,
     UserAttributeValueMap,
 } from '@lightdash/common';
@@ -55,6 +56,11 @@ export const validateUserAttributeOverrides = (
     // Validate narrowing: override values must be subset of existing permissions
     // Exception: if user has no existing value for an attribute, admin can set it
     for (const [key, overrideValues] of Object.entries(overrideAttributes)) {
+        if (overrideValues.length === 0) {
+            throw new ParameterError(
+                `Attribute override '${key}' must have at least one value`,
+            );
+        }
         const existingValues = Object.hasOwn(dbAttributes, key)
             ? dbAttributes[key]
             : undefined;

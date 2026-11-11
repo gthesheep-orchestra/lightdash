@@ -296,6 +296,11 @@ export const getDateZoomFromRequestParameters = (
 ): DateZoom | undefined =>
     params && 'dateZoom' in params ? params.dateZoom : undefined;
 
+export const getUserAttributeOverridesFromRequestParameters = (
+    params: ExecuteAsyncQueryRequestParams | undefined,
+): UserAttributeValueMap | undefined =>
+    params && 'userAttributes' in params ? params.userAttributes : undefined;
+
 /**
  * Kinds of totals derivable from an executed pivot query.
  */

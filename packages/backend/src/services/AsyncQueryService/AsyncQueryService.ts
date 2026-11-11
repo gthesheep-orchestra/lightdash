@@ -73,6 +73,7 @@ import {
     getMetricsWithValidParameters,
     getPivotValueColumnName,
     getQueryCostEstimateSettings,
+    getUserAttributeOverridesFromRequestParameters,
     getUserAttributeQueryTags,
     hasReservedParameterReference,
     isAiAccessQueryContext,
@@ -7930,6 +7931,9 @@ export class AsyncQueryService extends ProjectService {
                 ? { documentSource: documentQueryContext.reference }
                 : {}),
             ...(references ? { references } : {}),
+            ...(userAttributeOverrides
+                ? { userAttributes: userAttributeOverrides }
+                : {}),
             context,
             query: effectiveMetricQuery,
             parameters: combinedParameters,
@@ -8146,6 +8150,10 @@ export class AsyncQueryService extends ProjectService {
                     dateZoom: getDateZoomFromRequestParameters(
                         source.requestParameters,
                     ),
+                    userAttributeOverrides:
+                        getUserAttributeOverridesFromRequestParameters(
+                            source.requestParameters,
+                        ),
                     invalidateCache,
                 },
                 organizationUuid,
@@ -8230,6 +8238,10 @@ export class AsyncQueryService extends ProjectService {
                 totalConfiguration: { kind, subtotalDimensions },
                 parameters: sourceParameters,
                 dateZoom: sourceDateZoom,
+                userAttributeOverrides:
+                    getUserAttributeOverridesFromRequestParameters(
+                        source.requestParameters,
+                    ),
                 invalidateCache,
             },
             organizationUuid,
@@ -10205,6 +10217,9 @@ export class AsyncQueryService extends ProjectService {
             dateZoom,
             limit,
             parameters: combinedParameters,
+            ...(userAttributeOverrides
+                ? { userAttributes: userAttributeOverrides }
+                : {}),
         };
 
         const { fields, dateZoomApplied } = await this.getMetricQueryFields({
@@ -10412,12 +10427,17 @@ export class AsyncQueryService extends ProjectService {
 
         const { exploreName } = metricQuery;
 
+        // Drill-down must stay within the source query's attribute overrides
         const { explore, userAccessControls: preloadedUserAccessControls } =
             await this.getExploreWithUserAccessControls(
                 account,
                 projectUuid,
                 exploreName,
                 organizationUuid,
+                true,
+                getUserAttributeOverridesFromRequestParameters(
+                    source.requestParameters,
+                ),
             );
         if (explore.type === ExploreType.API_SOURCE) {
             throw new ParameterError(

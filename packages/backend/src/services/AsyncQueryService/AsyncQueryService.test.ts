@@ -1011,6 +1011,41 @@ const oldResultEntitlementFingerprint = (
 };
 
 describe('underlying data dimension selection', () => {
+    it('keeps the source query attribute overrides', async () => {
+        const service = getMockedAsyncQueryService(lightdashConfigMock);
+        vi.mocked(service.queryHistoryModel.get).mockResolvedValue({
+            queryUuid: 'source-query',
+            metricQuery: metricQueryMock,
+            fields: {},
+            requestParameters: { userAttributes: { region: ['EU'] } },
+        } as unknown as QueryHistory);
+        const exploreSpy = vi
+            .spyOn(service, 'getExploreWithUserAccessControls')
+            .mockRejectedValue(new Error('stop'));
+        const account = buildAccount();
+        account.user.ability = new Ability<PossibleAbilities>([
+            { action: 'manage', subject: 'all' },
+        ]);
+
+        await expect(
+            service.executeAsyncUnderlyingDataQuery({
+                account,
+                projectUuid,
+                underlyingDataSourceQueryUuid: 'source-query',
+                context: QueryExecutionContext.VIEW_UNDERLYING_DATA,
+                filters: {},
+            }),
+        ).rejects.toThrow('stop');
+        expect(exploreSpy).toHaveBeenCalledWith(
+            account,
+            projectUuid,
+            metricQueryMock.exploreName,
+            expect.any(String),
+            true,
+            { region: ['EU'] },
+        );
+    });
+
     it.each([
         [50, 50, undefined],
         [100, 100, undefined],
@@ -6428,6 +6463,15 @@ describe('AsyncQueryService', () => {
                     JSON.parse('{"constructor":["x"]}'),
                 ),
             ).resolves.toBeDefined();
+        });
+
+        test('rejects an attribute override with no values', async () => {
+            await expect(
+                setup(true).resolveRequestUserAttributeOverrides(
+                    sessionAccount,
+                    { region: [] },
+                ),
+            ).rejects.toThrow('must have at least one value');
         });
 
         test('rejects non-admins', async () => {
@@ -14177,7 +14221,7 @@ describe('AsyncQueryService', () => {
             vi.restoreAllMocks();
         });
 
-        it('threads the source dateZoom from request_parameters into the totals query', async () => {
+        it('threads the source dateZoom and attribute overrides from request_parameters into the totals query', async () => {
             const service = getMockedAsyncQueryService(lightdashConfigMock, {
                 savedChartModel: {
                     get: vi.fn().mockResolvedValue({
@@ -14228,6 +14272,7 @@ describe('AsyncQueryService', () => {
                     },
                     dashboardSorts: [],
                     dateZoom,
+                    userAttributes: { region: ['EU'] },
                 },
             } as unknown as QueryHistory);
 
@@ -14251,7 +14296,10 @@ describe('AsyncQueryService', () => {
 
             expect(runSpy).toHaveBeenCalledTimes(1);
             expect(runSpy.mock.calls[0][0]).toEqual(
-                expect.objectContaining({ dateZoom }),
+                expect.objectContaining({
+                    dateZoom,
+                    userAttributeOverrides: { region: ['EU'] },
+                }),
             );
         });
     });
