@@ -390,17 +390,19 @@ export class QueryController extends BaseController {
             dimensionOverrides: body.query.dimensionOverrides,
         };
 
+        const userAttributeOverrides = await this.services
+            .getAsyncQueryService()
+            .resolveRequestUserAttributeOverrides(
+                req.account!,
+                body.userAttributes,
+            );
+
         const results = await this.services
             .getAsyncQueryService()
             .executeAsyncMetricQuery({
                 account: req.account!,
                 projectUuid,
-                userAttributeOverrides: await this.services
-                    .getAsyncQueryService()
-                    .resolveRequestUserAttributeOverrides(
-                        req.account!,
-                        body.userAttributes,
-                    ),
+                userAttributeOverrides,
                 invalidateCache: body.invalidateCache,
                 usePreAggregateCache: body.usePreAggregateCache,
                 metricQuery,
@@ -593,17 +595,19 @@ export class QueryController extends BaseController {
 
         const context = body.context ?? getContextFromHeader(req);
 
+        const userAttributeOverrides = await this.services
+            .getAsyncQueryService()
+            .resolveRequestUserAttributeOverrides(
+                req.account!,
+                body.userAttributes,
+            );
+
         const results = await this.services
             .getAsyncQueryService()
             .executeAsyncDashboardChartQuery({
                 account: req.account!,
                 projectUuid,
-                userAttributeOverrides: await this.services
-                    .getAsyncQueryService()
-                    .resolveRequestUserAttributeOverrides(
-                        req.account!,
-                        body.userAttributes,
-                    ),
+                userAttributeOverrides,
                 invalidateCache: body.invalidateCache,
                 tileUuid: body.tileUuid,
                 chartUuid: body.chartUuid,

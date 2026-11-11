@@ -30,10 +30,7 @@ export type DateZoom = {
 
 export type ExecuteAsyncMetricQueryRequestParams =
     CommonExecuteQueryRequestParams & {
-        /**
-         * Org admins only. Values replace the caller's stored attributes for this
-         * query and must narrow existing access (unset attributes can be set).
-         */
+        /** Org admins only. Per-query attribute values; must narrow existing access. */
         userAttributes?: UserAttributeValueMap;
         query: Omit<MetricQueryRequest, 'csvLimit'>;
         /**
@@ -69,10 +66,7 @@ export type ExecuteAsyncSavedChartRequestParams =
 
 export type ExecuteAsyncDashboardChartRequestParams =
     CommonExecuteQueryRequestParams & {
-        /**
-         * Org admins only. Values replace the caller's stored attributes for this
-         * query and must narrow existing access (unset attributes can be set).
-         */
+        /** Org admins only. Per-query attribute values; must narrow existing access. */
         userAttributes?: UserAttributeValueMap;
         chartUuid: string;
         tileUuid: string;
